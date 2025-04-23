@@ -56,7 +56,7 @@ function showInstructions() {
             subtitleText.style.animation = 'fadeOut 5s ease';
             setTimeout(() => {
                 subtitleText.remove();
-                window.location.href = 'game_playScreen.html';
+                window.location.href = './html_files/game_playScreen.html';
             }, 4000);
         }
         document.getElementById('d_instructionsContainer').appendChild(startButton);
@@ -66,8 +66,7 @@ function showInstructions() {
     }
 }
 
-// When button is pressed to start game, or between levels, have a screen which shows messages like:
-// "Remember, your life is precious. Don't waste it."
+
 
 //*************************************************************************//
 // END OF FILE
