@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Level Editor</title>
+  <style>
+    body { font-family: sans-serif; padding: 10px; }
+    #grid { display: grid; grid-template-columns: repeat(20, 30px); gap: 1px; }
+    .cell { width: 30px; height: 30px; border: 1px solid #ccc; cursor: pointer; text-align: center; line-height: 30px; font-size: 12px; }
+    .selected { background-color: #aaf; }
+    #palette button { margin: 5px; }
+  </style>
+</head>
+<body>
+  <h1>Level Editor</h1>
+  <div id="palette">
+    <button onclick="setTileType('')">Erase</button>
+    <button onclick="setTileType('#')">Ground</button>
+    <button onclick="setTileType('P')">Player</button>
+    <button onclick="setTileType('S')">SummerOnly</button>
+    <button onclick="setTileType('F')">FallOnly</button>
+    <button onclick="setTileType('W')">WinterOnly</button>
+    <button onclick="setTileType('R')">SpringOnly</button>
+    <button onclick="setTileType('s')">ExcludeSummer</button>
+    <button onclick="setTileType('f')">ExcludeFall</button>
+    <button onclick="setTileType('w')">ExcludeWinter</button>
+    <button onclick="setTileType('r')">ExcludeSpring</button>
+  </div>
+  <div id="grid"></div>
+  <button onclick="exportLevel()">Export</button>
+  <textarea id="output" rows="10" cols="80"></textarea>
+
+  <script>
+    const rows = 15;
+    const cols = 20;
+    const grid = document.getElementById('grid');
+    let currentType = '#';
+    const cells = [];
+
+    function setTileType(type) {
+      currentType = type;
+    }
+
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < cols; x++) {
+        const div = document.createElement('div');
+        div.className = 'cell';
+        div.dataset.x = x;
+        div.dataset.y = y;
+        div.textContent = '';
+        div.onclick = () => {
+          div.textContent = currentType;
+        };
+        grid.appendChild(div);
+        cells.push(div);
+      }
+    }
+
+    function exportLevel() {
+      const level = [];
+      for (let y = 0; y < rows; y++) {
+        let row = '';
+        for (let x = 0; x < cols; x++) {
+          const cell = cells[y * cols + x];
+          row += cell.textContent.padEnd(2);
+        }
+        level.push('"' + row.trimEnd() + '"');
+      }
+      document.getElementById('output').value = '[\n' + level.join(',\n') + '\n]';
+    }
+  </script>
+</body>
+</html>

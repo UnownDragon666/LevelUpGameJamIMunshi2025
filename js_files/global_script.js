@@ -37,7 +37,7 @@ function showInstructions() {
         instructionText.innerHTML =
             'Move left and right with A and D or arrow keys' +  '<br>' +
             'and jump with the spacebar.' +  '<br>' +
-            'Hold (some key) to move time forward' +  '<br>' +
+            'Click "W" key or Up arrow to move time forward' +  '<br>' +
             'All you must do is make it home.' + '<br>' +
             'I pray your journey goes well...';
         instructionText.id = 'p_instructionText';
