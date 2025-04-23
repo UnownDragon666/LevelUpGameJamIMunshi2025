@@ -1,0 +1,85 @@
+/* Import Ubuntu font from Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Caudex:ital,wght@0,400;0,700;1,400;1,700&family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap');
+/* Import Quicksand font from Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Caudex:ital,wght@0,400;0,700;1,400;1,700&family=Quicksand:wght@300..700&family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap');
+
+
+:root {
+    --font-family-title: "Ubuntu", sans-serif;
+    --font-family-text: 'Quicksand', sans-serif;
+    --color-primary: #012A4A;
+    --color-secondary: #013A63;
+    --color-tertiary: #01497C;
+    --color-background: #d7ebf1;
+}
+
+/* Global Styles */
+* { 
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: var(--font-family-text);
+    
+}
+
+html, body {
+    background-color: var(--color-background);
+}
+
+/* Text Styles */
+#h_title {
+    font-family: var(--font-family-title);
+    color: var(--color-primary);
+    font-size: 3.5em;
+    margin: auto;
+    text-align: center;
+    padding-top: 3.5em;
+}
+
+#h_title:hover {
+    cursor: default;
+    user-select: none;
+}
+
+#p_subtitle {
+    color: var(--color-secondary);
+    font-size: 1.5em;
+    margin: auto;
+    text-align: center;
+    padding-top: 4em;
+}
+
+#p_subtitle:hover {
+    cursor: default;
+    user-select: none;
+}
+
+/* Instructions Styles */
+#p_instructionText {
+    color: var(--color-tertiary);
+    font-size: 1.3em;
+    margin: auto;
+    text-align: center;
+    padding-top: 3em;
+    padding-bottom: 2em;
+}
+
+/* Button Styles */
+#b_startButton {
+    color: var(--color-background);
+    font-size: 1.5em;
+    font-family: var(--font-family-title);
+    background-color: var(--color-primary);
+    border-radius: 10px;
+    padding: 0.5em 2em;
+    margin-top: 2em; 
+    margin: auto;
+    text-align: center;
+    display: block;
+}
+
+/* Animations Styles */
+@keyframes fadeOut {
+    0% { opacity: 1; }
+    100% { opacity: 0; }
+}
