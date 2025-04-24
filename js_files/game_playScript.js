@@ -53,9 +53,24 @@ const LEVELS = [
         "         SS     FF     WW     RR        ",
         "  P      SS     FF     WW     RR        ", 
         "########################################"],
-        [
 
-        ]
+    [
+        "                         BBB          ",
+        "                         BBB          ",
+        "        FFFFFFFFFFF      BBB          ",
+        "                         BBB          ",
+        "SSSSS           BB       BBB        BB",
+        "                BB W   W BBBrrrrrrrrBB",
+        "        RRRRR   BB   W   BBB   W    BB",
+        "                BB             F    BB",
+        "WWWWW           BB             S    BB",
+        "                BB                  BB",
+        "        FFFFF   BB R             R  BB",
+        "                BB   r         w    BB",
+        "SSSSS           BB     s     f      BB",
+        "  P             BB                  BB",
+        "#######################################"],
+        
 ];
 
 const MOVEMENTSPEED = 6.5;
@@ -81,8 +96,10 @@ let levelIndex = 0;
 let player;
 let ground;
 let canJump = true;
-let floorGroup;
+let floorGroup, blockGroup;
 let seasonHasChanged = false;
+
+let leftWall, rightWall;
 
 //*************************************************************************//
 // preload()
@@ -106,6 +123,7 @@ function preload() {
 
     // Create group for environment sprites
     floorGroup = new Group();
+    blockGroup = new Group();
     
     season = game_findSeasonColors();
 }
@@ -122,12 +140,15 @@ function setup() {
     let cnv = createCanvas(windowWidth, windowHeight);
 
     world.gravity.y = GRAVITY;
-    game_createPlayerSprite(); 
-    game_parseLevel();
+    game_parseLevel(LEVELS[levelIndex]);
 
     player.collides(floorGroup, () => {
         canJump = true;
     });
+    
+    game_createEnvironmentSprites();
+
+    player.collides(rightWall, game_nextLevel);
 }
 
 //*************************************************************************//
@@ -142,7 +163,7 @@ function draw() {
     background(season[0].code);
     game_updateSprites();
     game_displaySeason();
-    game_createEnvironmentSprites();
+    
     game_changeSeason();
 }
 
@@ -153,11 +174,11 @@ function draw() {
 // Output: N/A
 //*************************************************************************//
 function game_parseLevel(_levelMap) {
-    let tileWidth = width / LEVELS[levelIndex][0].length;
-    let tileHeight = height / LEVELS[levelIndex].length;
-    for (let i=0; i < LEVELS[levelIndex].length; i++) {
-        for (let j=0; j < LEVELS[levelIndex][i].length; j++) {
-            let tileType = LEVELS[levelIndex][i][j];
+    let tileWidth = width / _levelMap[0].length;
+    let tileHeight = height / _levelMap.length;
+    for (let i=0; i < _levelMap.length; i++) {
+        for (let j=0; j < _levelMap[i].length; j++) {
+            let tileType = _levelMap[i][j];
             let x = tileWidth * j + tileWidth / 2;
             let y = tileHeight * i + tileHeight / 2;
             game_spawnTile(tileType, x, y, tileWidth, tileHeight);
@@ -183,6 +204,7 @@ function game_spawnTile(_tileType, _x, _y, _width, _height) {
             ground.friction = 1;
             floorGroup.add(ground);
             ground.strokeWeight = 0;
+            ground.color = season[season.length - 1].code;
             break;
         case 'S':
             let summerObj = new Sprite(_x, _y, _width, _height, 's');
@@ -248,6 +270,14 @@ function game_spawnTile(_tileType, _x, _y, _width, _height) {
             excludeSpringObj.strokeWeight = 0;
             excludeSpringGroup.add(excludeSpringObj);
             break;
+        case 'B': 
+            let blockObj = new Sprite(_x, _y, _width, _height, 's');
+            blockObj.color = season[season.length - 1].code;
+            blockObj.rotationLock = true;
+            blockObj.friction = 0;
+            blockObj.strokeWeight = 0;
+            blockGroup.add(blockObj);
+            break;
         default:
             break;
     }
@@ -265,8 +295,6 @@ function game_createPlayerSprite(_x, _y) {
     player.rotationLock = true;
     player.color = 'white';
 }
-
-
 
 //*************************************************************************//
 // game_createEnvironmentSprites()
@@ -315,6 +343,7 @@ function game_changeSeason() {
             seasonIndex = 0;
         }
         currentSeason = SEASONS[seasonIndex];
+        game_updateColors();
     }
 }
 
@@ -341,8 +370,6 @@ function game_displaySeason() {
 function game_updateSprites() {
     game_movePlayer();
 
-    game_updateColors();
-
     game_displaySeasonalSprites();
 }
 
@@ -355,30 +382,31 @@ function game_updateSprites() {
 function game_updateColors() {
     // Update colors of the sprites based on the current season
     for (let i = 0; i < onlySummerGroup.length; i++) {
-        onlySummerGroup[i].color = season[Math.ceil(random(1, 4))].code;
+        onlySummerGroup[i].color = random(SUMMERCOLORS.slice(1)).code;
     }
     for (let i = 0; i < onlyFallGroup.length; i++) {
-        onlyFallGroup[i].color = season[Math.ceil(random(1, 4))].code;
+        onlyFallGroup[i].color = random(FALLCOLORS.slice(1)).code;
     }
     for (let i = 0; i < onlyWinterGroup.length; i++) {
-        onlyWinterGroup[i].color = season[Math.ceil(random(1, 3))].code;
+        onlyWinterGroup[i].color = random(WINTERCOLORS.slice(1)).code;
     }
     for (let i = 0; i < onlySpringGroup.length; i++) {
-        onlySpringGroup[i].color = season[Math.ceil(random(1, 5))].code;
+        onlySpringGroup[i].color = random(SPRINGCOLORS.slice(1)).code;
     }
     for (let i = 0; i < excludeSummerGroup.length; i++) {
-        excludeSummerGroup[i].color = season[Math.ceil(random(1, 4))].code;
+        excludeSummerGroup[i].color = random([...FALLCOLORS, ...WINTERCOLORS, ...SPRINGCOLORS]).code;
     }
     for (let i = 0; i < excludeFallGroup.length; i++) {
-        excludeFallGroup[i].color = season[Math.ceil(random(1, 4))].code;
+        excludeFallGroup[i].color = random([...SUMMERCOLORS, ...WINTERCOLORS, ...SPRINGCOLORS]).code;
     }
     for (let i = 0; i < excludeWinterGroup.length; i++) {
-        excludeWinterGroup[i].color = season[Math.ceil(random(1, 3))].code;
+        excludeWinterGroup[i].color = random([...SUMMERCOLORS, ...FALLCOLORS, ...SPRINGCOLORS]).code;
     }
     for (let i = 0; i < excludeSpringGroup.length; i++) {
-        excludeSpringGroup[i].color = season[Math.ceil(random(1, 5))].code;
+        excludeSpringGroup[i].color = random([...SUMMERCOLORS, ...FALLCOLORS, ...WINTERCOLORS]).code;
     }
     floorGroup.color = season[season.length - 1].code;
+    blockGroup.color = season[season.length - 1].code;
 }
 
 //*************************************************************************//
@@ -449,3 +477,44 @@ function game_movePlayer() {
         }
     }
 }
+
+//*************************************************************************//
+// game_nextLevel()
+// Loads the next level in the game
+// Input: N/A
+// Output: N/A
+//*************************************************************************//
+function game_nextLevel() {
+    levelIndex += 1;
+    if (levelIndex == LEVELS.length) {
+        gameEnd();
+        return;
+    }
+    game_clearLevel();
+    game_parseLevel(LEVELS[levelIndex]);
+}
+
+//*************************************************************************//
+// game_clearLevel()
+// Clears the current level and resets the game state
+// Input: N/A
+// Output: N/A
+//*************************************************************************//
+function game_clearLevel() {
+    onlySummerGroup.removeAll();
+    onlyFallGroup.removeAll();
+    onlyWinterGroup.removeAll();
+    onlySpringGroup.removeAll();
+    excludeSummerGroup.removeAll();
+    excludeFallGroup.removeAll();
+    excludeWinterGroup.removeAll();
+    excludeSpringGroup.removeAll();
+    floorGroup.removeAll();
+    player.remove();
+}
+
+//*************************************************************************//
+// END OF FILE
+//
+//
+//*************************************************************************//
