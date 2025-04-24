@@ -46,34 +46,54 @@ const SEASONS = ['Summer', 'Fall', 'Winter', 'Spring'];
 
 const LEVELS = [
     [
-        "                                        ",
-        "         SS     FF     WW     RR        ",
-        "         SS     FF     WW     RR        ",
-        "         SS     FF     WW     RR        ",
-        "         SS     FF     WW     RR        ",
-        "  P      SS     FF     WW     RR        ", 
+        "                                      ",
+        "                                      ",
+        "                                      ",
+        "         SS     FF     WW     RR      ",
+        "         SS     FF     WW     RR      ",
+        "         SS     FF     WW     RR      ",
+        "         SS     FF     WW     RR      ",
+        "         SS     FF     WW     RR      ",
+        "         SS     FF     WW     RR      ",
+        "         SS     FF     WW     RR      ",
+        "  P      SS     FF     WW     RR      ",
         "########################################"],
 
     [
         "                         BBB          ",
-        "                         BBB          ",
-        "        FFFFFFFFFFF      BBB          ",
-        "                         BBB          ",
-        "SSSSS           BB       BBB        BB",
-        "                BB W   W BBBrrrrrrrrBB",
+        "        qqqqqqqqqqq      BBB          ",
+        "        FFFFFFFFFFF      BBBqqqqqqqq  ",
+        "qqqqq                    BBBrrrrrrrrBB",
+        "SSSSS           BB q   q BBB        BB",
+        "        qqqqq   BB W q W BBB   q    BB",
         "        RRRRR   BB   W   BBB   W    BB",
-        "                BB             F    BB",
+        "qqqqq           BB             q    BB",
         "WWWWW           BB             S    BB",
-        "                BB                  BB",
-        "        FFFFF   BB R             R  BB",
-        "                BB   r         w    BB",
-        "SSSSS           BB     s     f      BB",
-        "  P             BB                  BB",
+        "        qqqqq   BB q             q  BB",
+        "qqqqq   FFFFF   BB R q         q R  BB",
+        "SSSSS           BB   r q     q w    BB",
+        " P              BB     s     f      BB",
+        "qqqqqqqqqqqqqqqqBBqqqqqqqqqqqqqqqqqqBB",
         "#######################################"],
-        
+    [
+        "########################################################",
+        "########################################################",
+        "########################################################",
+        "                                                        ",
+        "                                                        ",
+        "                                                       B",
+        "                                                       B",
+        "                                                       B",
+        "                                                       B",
+        "    P                                                  B",
+        "########################################################",
+        "########################################################",
+        "########################################################"],
+    []
 ];
 
 const MOVEMENTSPEED = 6.5;
+const JUMPSTRENGTH = 10;
 const GRAVITY = 15;
 
 //*************************************************************************//
@@ -91,12 +111,13 @@ let excludeSpringGroup;
 let seasonIndex = 0;
 let currentSeason = SEASONS[seasonIndex];
 let season = SUMMERCOLORS;
+let seasonGroup;
 
 let levelIndex = 0;
 let player;
 let ground;
 let canJump = true;
-let floorGroup, blockGroup;
+let floorGroup, blockGroup, qGroup;
 let seasonHasChanged = false;
 
 let leftWall, rightWall;
@@ -112,6 +133,7 @@ function preload() {
     console.log("%cpreload() run", "color: blue; background-color: black;");
 
     // Create groups for seasonal sprites
+    seasonGroup = new Group();
     onlySummerGroup = new Group();
     onlyFallGroup = new Group();
     onlyWinterGroup = new Group();
@@ -124,7 +146,8 @@ function preload() {
     // Create group for environment sprites
     floorGroup = new Group();
     blockGroup = new Group();
-    
+    qGroup = new Group();
+
     season = game_findSeasonColors();
 }
 
@@ -142,13 +165,7 @@ function setup() {
     world.gravity.y = GRAVITY;
     game_parseLevel(LEVELS[levelIndex]);
 
-    player.collides(floorGroup, () => {
-        canJump = true;
-    });
-    
     game_createEnvironmentSprites();
-
-    player.collides(rightWall, game_nextLevel);
 }
 
 //*************************************************************************//
@@ -159,12 +176,22 @@ function setup() {
 // Output: N/A
 //*************************************************************************//
 function draw() {
+    game_updateSprites();
+
     season = game_findSeasonColors();
     background(season[0].code);
-    game_updateSprites();
+
     game_displaySeason();
-    
+
     game_changeSeason();
+
+    if (kb.pressed('e')) {
+        game_nextLevel();
+    }
+    if (kb.pressed('r')) {
+        game_clearLevel();
+        game_parseLevel(LEVELS[levelIndex]);
+    }
 }
 
 //*************************************************************************//
@@ -176,8 +203,8 @@ function draw() {
 function game_parseLevel(_levelMap) {
     let tileWidth = width / _levelMap[0].length;
     let tileHeight = height / _levelMap.length;
-    for (let i=0; i < _levelMap.length; i++) {
-        for (let j=0; j < _levelMap[i].length; j++) {
+    for (let i = 0; i < _levelMap.length; i++) {
+        for (let j = 0; j < _levelMap[i].length; j++) {
             let tileType = _levelMap[i][j];
             let x = tileWidth * j + tileWidth / 2;
             let y = tileHeight * i + tileHeight / 2;
@@ -196,7 +223,7 @@ function game_spawnTile(_tileType, _x, _y, _width, _height) {
     console.log("%cgame_spawnTile() run", "color: blue; background-color: black;");
     switch (_tileType) {
         case 'P':
-            game_createPlayerSprite(_x, _y);
+            game_createPlayerSprite(_x, _y, _width, _height);
             break;
         case '#':
             ground = createSprite(_x, _y, _width + 1, _height + 1, 's');
@@ -208,75 +235,91 @@ function game_spawnTile(_tileType, _x, _y, _width, _height) {
             break;
         case 'S':
             let summerObj = new Sprite(_x, _y, _width, _height, 's');
-            summerObj.color = season[Math.ceil(random(1, 4))].code;
+            summerObj.color = random(SUMMERCOLORS.slice(1)).code;
             summerObj.rotationLock = true;
             summerObj.friction = 0;
             summerObj.strokeWeight = 0;
             onlySummerGroup.add(summerObj);
+            seasonGroup.add(summerObj);
             break;
         case 'F':
             let fallObj = new Sprite(_x, _y, _width, _height, 's');
-            fallObj.color = season[Math.ceil(random(1, 4))].code;
+            fallObj.color = random(FALLCOLORS.slice(1)).code;
             fallObj.rotationLock = true;
             fallObj.friction = 0;
             fallObj.strokeWeight = 0;
             onlyFallGroup.add(fallObj);
+            seasonGroup.add(fallObj);
             break;
         case 'W':
             let winterObj = new Sprite(_x, _y, _width, _height, 's');
-            winterObj.color = season[Math.ceil(random(1, 3))].code;
+            winterObj.color = random(WINTERCOLORS.slice(1)).code;
             winterObj.rotationLock = true;
             winterObj.friction = 0;
             winterObj.strokeWeight = 0;
             onlyWinterGroup.add(winterObj);
+            seasonGroup.add(winterObj);
             break;
         case 'R':
             let springObj = new Sprite(_x, _y, _width, _height, 's');
-            springObj.color = season[Math.ceil(random(1, 5))].code;
+            springObj.color = random(SPRINGCOLORS.slice(1)).code;
             springObj.rotationLock = true;
             springObj.friction = 0;
             springObj.strokeWeight = 0;
             onlySpringGroup.add(springObj);
+            seasonGroup.add(springObj);
             break;
         case 's':
             let excludeSummerObj = new Sprite(_x, _y, _width, _height, 's');
-            excludeSummerObj.color = season[Math.ceil(random(1, 4))].code;
+            excludeSummerObj.color = random([...FALLCOLORS.slice(1), ...WINTERCOLORS.slice(1), ...SPRINGCOLORS.slice(1)]).code;
             excludeSummerObj.rotationLock = true;
             excludeSummerObj.friction = 0;
             excludeSummerObj.strokeWeight = 0;
             excludeSummerGroup.add(excludeSummerObj);
+            seasonGroup.add(excludeSummerObj);
             break;
         case 'f':
             let excludeFallObj = new Sprite(_x, _y, _width, _height, 's');
-            excludeFallObj.color = season[Math.ceil(random(1, 4))].code;
+            excludeFallObj.color = random([...SUMMERCOLORS.slice(1), ...WINTERCOLORS.slice(1), ...SPRINGCOLORS.slice(1)]).code;
             excludeFallObj.rotationLock = true;
             excludeFallObj.friction = 0;
             excludeFallObj.strokeWeight = 0;
             excludeFallGroup.add(excludeFallObj);
+            seasonGroup.add(excludeFallObj);
             break;
         case 'w':
             let excludeWinterObj = new Sprite(_x, _y, _width, _height, 's');
-            excludeWinterObj.color = season[Math.ceil(random(1, 3))].code;
+            excludeWinterObj.color = random([...SUMMERCOLORS.slice(1), ...FALLCOLORS.slice(1), ...SPRINGCOLORS.slice(1)]).code;
             excludeWinterObj.rotationLock = true;
             excludeWinterObj.friction = 0;
             excludeWinterObj.strokeWeight = 0;
             excludeWinterGroup.add(excludeWinterObj);
+            seasonGroup.add(excludeWinterObj);
             break;
         case 'r':
             let excludeSpringObj = new Sprite(_x, _y, _width, _height, 's');
-            excludeSpringObj.color = season[Math.ceil(random(1, 5))].code;
+            excludeSpringObj.color = random([...SUMMERCOLORS.slice(1), ...FALLCOLORS.slice(1), ...WINTERCOLORS.slice(1)]).code;
             excludeSpringObj.rotationLock = true;
             excludeSpringObj.friction = 0;
             excludeSpringObj.strokeWeight = 0;
             excludeSpringGroup.add(excludeSpringObj);
+            seasonGroup.add(excludeSpringObj);
             break;
-        case 'B': 
+        case 'B':
             let blockObj = new Sprite(_x, _y, _width, _height, 's');
             blockObj.color = season[season.length - 1].code;
             blockObj.rotationLock = true;
             blockObj.friction = 0;
             blockObj.strokeWeight = 0;
             blockGroup.add(blockObj);
+            break;
+        case 'q':
+            let qObj = new Sprite(_x, _y - _height / 2, _width, 2, 'n');
+            qObj.visible = false;
+            qObj.rotationLock = true;
+            qObj.friction = 0;
+            qObj.strokeWeight = 0;
+            qGroup.add(qObj);
             break;
         default:
             break;
@@ -289,11 +332,14 @@ function game_spawnTile(_tileType, _x, _y, _width, _height) {
 // Input: _x, _y (x and y position of the player sprite)
 // Output: N/A
 //*************************************************************************//
-function game_createPlayerSprite(_x, _y) {
+function game_createPlayerSprite(_x, _y, _width, _height) {
     console.log("%cgame_createPlayerSprite() run", "color: blue; background-color: black;");
-    player = createSprite(_x, _y, 25, 50, 'd');
+    _pwidth = _width / 2;
+    _pheight = _height;
+    player = createSprite(_x, _y, _pwidth, _pheight, 'd');
     player.rotationLock = true;
     player.color = 'white';
+    player.friction = 0;
 }
 
 //*************************************************************************//
@@ -369,8 +415,23 @@ function game_displaySeason() {
 //*************************************************************************//
 function game_updateSprites() {
     game_movePlayer();
-
     game_displaySeasonalSprites();
+
+    player.collides(rightWall, game_nextLevel);
+    player.collides(floorGroup, () => {
+        canJump = true;
+    });
+    player.colliding(floorGroup, () => {
+        console.log("Player is colliding with floor group");
+        canJump = true;
+    });
+    player.overlapping(qGroup, () => {
+        setTimeout(() => {
+            if (player.vel.y == 0) {
+                canJump = true;
+            }
+        }, 300);
+    });
 }
 
 //*************************************************************************//
@@ -394,16 +455,16 @@ function game_updateColors() {
         onlySpringGroup[i].color = random(SPRINGCOLORS.slice(1)).code;
     }
     for (let i = 0; i < excludeSummerGroup.length; i++) {
-        excludeSummerGroup[i].color = random([...FALLCOLORS, ...WINTERCOLORS, ...SPRINGCOLORS]).code;
+        excludeSummerGroup[i].color = random([...FALLCOLORS.slice(1), ...WINTERCOLORS.slice(1), ...SPRINGCOLORS.slice(1)]).code;
     }
     for (let i = 0; i < excludeFallGroup.length; i++) {
-        excludeFallGroup[i].color = random([...SUMMERCOLORS, ...WINTERCOLORS, ...SPRINGCOLORS]).code;
+        excludeFallGroup[i].color = random([...SUMMERCOLORS.slice(1), ...WINTERCOLORS.slice(1), ...SPRINGCOLORS.slice(1)]).code;
     }
     for (let i = 0; i < excludeWinterGroup.length; i++) {
-        excludeWinterGroup[i].color = random([...SUMMERCOLORS, ...FALLCOLORS, ...SPRINGCOLORS]).code;
+        excludeWinterGroup[i].color = random([...SUMMERCOLORS.slice(1), ...FALLCOLORS.slice(1), ...SPRINGCOLORS.slice(1)]).code;
     }
     for (let i = 0; i < excludeSpringGroup.length; i++) {
-        excludeSpringGroup[i].color = random([...SUMMERCOLORS, ...FALLCOLORS, ...WINTERCOLORS]).code;
+        excludeSpringGroup[i].color = random([...SUMMERCOLORS.slice(1), ...FALLCOLORS.slice(1), ...WINTERCOLORS.slice(1)]).code;
     }
     floorGroup.color = season[season.length - 1].code;
     blockGroup.color = season[season.length - 1].code;
@@ -472,7 +533,7 @@ function game_movePlayer() {
 
     if (kb.pressing('space')) {
         if (canJump == true) {
-            player.vel.y = -1 * MOVEMENTSPEED;
+            player.vel.y = -1 * JUMPSTRENGTH;
             canJump = false;
         }
     }
@@ -509,6 +570,8 @@ function game_clearLevel() {
     excludeFallGroup.removeAll();
     excludeWinterGroup.removeAll();
     excludeSpringGroup.removeAll();
+    qGroup.removeAll();
+    blockGroup.removeAll();
     floorGroup.removeAll();
     player.remove();
 }
